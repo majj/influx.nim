@@ -64,6 +64,21 @@ type
 # Private Functions
 # =================
 
+proc isInt(val:string):bool=
+    try:
+        discard parseInt(val)
+    except ValueError:
+        return false
+    return true
+    
+proc isFloat(val:string):bool=
+    try:
+        discard parseFloat(val)
+    except ValueError:
+        return false
+    return true
+
+# =================
 proc composeInfluxHostname(influx: InfluxDB, endpoint: string, database: string, additionalInfo: Table[string, string]): string =
   var complete_uri = initUri()
 
@@ -125,7 +140,12 @@ proc serializeLine(line_data: LineProtocol): string =
   output &= " "
   var fields = newSeq[string]()
   for key, value in line_data.fields:
-    fields.add( key & "=\"" & value & "\"" )
+    if isInt(value):
+        fields.add( key & "=" & value & "i" )
+    elif isFloat(value):
+        fields.add( key & "=" & value  )
+    else:
+        fields.add( key & "=\"" & value & "\"" )
   output &= fields.join(",")
   output &= " "
   if line_data.timestamp != 0:
@@ -154,7 +174,7 @@ proc getVersion*(influx: InfluxDB, requestType: HttpMethod = HttpGet): (InfluxSt
   let query_info = initTable[string, string]()
   case requestType
   of HttpGet, HttpHead:
-    let response = influx.performSyncRequest(requestType, InfluxPingEndpoint, nil, query_info, nil)
+    let response = influx.performSyncRequest(requestType, InfluxPingEndpoint, "", query_info, "")
     if response.headers.table.hasKey(InfluxVersionHeader):
       let version_number = response.headers.table[InfluxVersionHeader].join(" ")
       let version_json = "{\"version\": \"" & version_number & "\"}"
@@ -207,6 +227,6 @@ proc query*(influx: InfluxDB, database: string, query: string, httpMethod: HttpM
   ## ``JsonNode`` The body of the response.
   ##
   let queryInfo = @{"q": query}.toTable
-  let response = influx.performSyncRequest(httpMethod, InfluxQueryEndpoint, database, queryInfo, nil)
+  let response = influx.performSyncRequest(httpMethod, InfluxQueryEndpoint, database, queryInfo, "")
   return (convertHttpCodeToInfluxStatus(response.code), parseJson(response.body))
 
