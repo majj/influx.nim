@@ -8,10 +8,10 @@ echo(version_response)
 echo($version_data)
 
 let values = @{
-  "command": "echo",
+  "command": "ec,ho",
   "f":"7.3",
   "i":"93",
-  "arguments": "hello",
+  "arguments": "he\\llo",
 }.toTable
 let data = LineProtocol(measurement: "cmd_hist", fields: values)
 let (write_response, write_data) = influxdb.write("mabo", @[data])

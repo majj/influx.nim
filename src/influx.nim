@@ -145,7 +145,8 @@ proc serializeLine(line_data: LineProtocol): string =
     elif isFloat(value):
         fields.add( key & "=" & value  )
     else:
-        fields.add( key & "=\"" & value & "\"" )
+        let val = value.replace("\"","\\\"") #escape "
+        fields.add( key & "=\"" & val & "\"" )
   output &= fields.join(",")
   output &= " "
   if line_data.timestamp != 0:
